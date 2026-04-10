@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente STATUS — Beta</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+
+  :root {
+    --bg: #0e0e0f; --surface: #161618; --surface2: #1e1e21;
+    --border: #2a2a2e; --border2: #3a3a3f;
+    --accent: #c8ff00; --accent2: #00d4ff;
+    --text: #e8e8ea; --text2: #888890; --text3: #555560;
+    --danger: #ff4444; --success: #00cc88;
+    --mono: 'DM Mono', monospace; --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  header { border-bottom: 1px solid var(--border); padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; background: var(--bg); position: sticky; top: 0; z-index: 100; }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-mark { width: 30px; height: 30px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 500; font-size: 12px; color: #0e0e0f; }
+  .logo-text { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--text2); }
+  .logo-text span { color: var(--accent); }
+  .badge { font-family: var(--mono); font-size: 10px; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border2); color: var(--text3); }
+
+  main { display: grid; grid-template-columns: 300px 1fr; flex: 1; min-height: 0; }
+  .panel-left { border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+  .psection { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+  .plabel { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--text3); text-transform: uppercase; margin-bottom: 14px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; }
+  .field select, .field textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 12px; padding: 8px 11px; outline: none; transition: border-color 0.15s; appearance: none; }
+  .field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555560' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; cursor: pointer; }
+  .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+  .periodo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+  .periodo-btn { padding: 7px; text-align: center; border-radius: 5px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+  .periodo-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(200,255,0,0.06); }
+
+  .conn-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .conn-row:last-child { border-bottom: none; }
+  .conn-key { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+  .conn-val { font-family: var(--mono); font-size: 11px; }
+  .conn-val.ok { color: var(--success); }
+  .conn-val.warn { color: #ffaa00; }
+
+  .btn-generate { width: 100%; padding: 13px; background: var(--accent); color: #0e0e0f; border: none; border-radius: 8px; font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.05em; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-generate:hover { background: #d8ff20; transform: translateY(-1px); }
+  .btn-generate:disabled { background: var(--border2); color: var(--text3); cursor: not-allowed; transform: none; }
+
+  .panel-right { display: flex; flex-direction: column; overflow: hidden; }
+  .panel-tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 32px; }
+  .tab { padding: 15px 0; margin-right: 24px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; text-transform: uppercase; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { flex: 1; overflow-y: auto; padding: 32px; display: none; }
+  .tab-content.active { display: block; }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 400px; text-align: center; gap: 14px; }
+  .empty-icon { width: 56px; height: 56px; border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .empty-title { font-size: 15px; font-weight: 500; color: var(--text2); }
+  .empty-sub { font-family: var(--mono); font-size: 11px; color: var(--text3); max-width: 280px; line-height: 1.6; }
+
+  .loading-state { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 400px; gap: 18px; }
+  .loading-state.active { display: flex; }
+  .loading-bar-wrap { width: 180px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .loading-bar { height: 100%; background: var(--accent); border-radius: 2px; animation: loadAnim 1.8s ease-in-out infinite; }
+  @keyframes loadAnim { 0%{width:0%;margin-left:0} 50%{width:60%;margin-left:20%} 100%{width:0%;margin-left:100%} }
+  .loading-step { font-family: var(--mono); font-size: 11px; color: var(--text3); letter-spacing: 0.05em; }
+
+  .informe-wrap { display: none; }
+  .informe-wrap.active { display: block; }
+  .informe-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .informe-cliente { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .informe-periodo { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .informe-actions { display: flex; gap: 8px; }
+  .btn-icon { padding: 7px 13px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+  .btn-icon:hover { border-color: var(--border2); color: var(--text); }
+  .btn-icon.primary { border-color: var(--accent); color: var(--accent); background: rgba(200,255,0,0.05); }
+
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap: 10px; margin-bottom: 28px; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .metric-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 7px; }
+  .metric-value { font-size: 22px; font-weight: 500; letter-spacing: -0.5px; color: var(--text); }
+  .metric-delta { font-family: var(--mono); font-size: 10px; margin-top: 3px; }
+  .metric-delta.up { color: var(--success); }
+  .metric-delta.down { color: var(--danger); }
+
+  .section-block { margin-bottom: 28px; }
+  .section-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-body { font-size: 14px; line-height: 1.8; color: var(--text2); }
+  .section-body p { margin-bottom: 10px; }
+
+  .finding-item { display: flex; gap: 12px; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
+  .finding-rank { font-family: var(--mono); font-size: 10px; color: var(--text3); min-width: 18px; padding-top: 2px; }
+  .finding-body { flex: 1; }
+  .finding-title { font-weight: 500; font-size: 13px; color: var(--text); margin-bottom: 4px; }
+  .finding-desc { font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .finding-implication { font-family: var(--mono); font-size: 11px; color: var(--accent2); margin-top: 6px; }
+
+  .highlight-box { background: rgba(200,255,0,0.04); border: 1px solid rgba(200,255,0,0.15); border-radius: 8px; padding: 16px 20px; }
+  .highlight-number { font-size: 36px; font-weight: 500; color: var(--accent); letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
+  .highlight-label { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+  .gaps-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; font-family: var(--mono); font-size: 12px; color: var(--text3); line-height: 1.6; }
+  .raw-json { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; font-family: var(--mono); font-size: 11px; color: var(--text2); line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 11px 16px; font-family: var(--mono); font-size: 12px; color: var(--text); display: none; z-index: 999; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">ST</div>
+    <div class="logo-text">AGENTE <span>STATUS</span></div>
+  </div>
+  <div class="badge">BETA · AZERTA DIGITAL · v0.3</div>
+</header>
+
+<main>
+  <div class="panel-left">
+    <div class="psection">
+      <div class="plabel">Cliente</div>
+      <div class="field">
+        <label>Seleccionar cliente</label>
+        <select id="clientSelect" onchange="seleccionarCliente(this.value)">
+          <option value="">— Elige un cliente —</option>
+          <option value="Colmena">Colmena</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Contexto del período (campañas, hitos, crisis)</label>
+        <textarea id="context" placeholder="Ej: Lanzamiento campaña deportistas. Premio PXI el 23 de marzo..."></textarea>
+      </div>
+    </div>
+    <div class="psection">
+      <div class="plabel">Período</div>
+      <div class="periodo-grid">
+        <button class="periodo-btn" onclick="setPeriodo(this,7)">7 días</button>
+        <button class="periodo-btn active" onclick="setPeriodo(this,30)">30 días</button>
+        <button class="periodo-btn" onclick="setPeriodo(this,90)">90 días</button>
+      </div>
+    </div>
+    <div class="psection">
+      <div class="plabel">Conexión</div>
+      <div class="conn-row"><span class="conn-key">Metricool</span><span class="conn-val ok">● Datos cargados</span></div>
+      <div class="conn-row"><span class="conn-key">Claude API</span><span class="conn-val ok">● Conectado</span></div>
+      <div class="conn-row"><span class="conn-key">Período</span><span class="conn-val warn">11 mar – 10 abr 2026</span></div>
+    </div>
+    <div class="psection">
+      <button class="btn-generate" id="btnGenerate" onclick="generarInforme()">
+        <span>⚡</span> Generar informe
+      </button>
+    </div>
+  </div>
+
+  <div class="panel-right">
+    <div class="panel-tabs">
+      <div class="tab active" onclick="switchTab('informe',this)">Informe</div>
+      <div class="tab" onclick="switchTab('datos',this)">Datos brutos</div>
+      <div class="tab" onclick="switchTab('prompt',this)">Prompt</div>
+    </div>
+
+    <div class="tab-content active" id="tab-informe">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">Sin informe generado</div>
+        <div class="empty-sub">Selecciona Colmena y presiona "Generar informe"</div>
+      </div>
+      <div class="loading-state" id="loadingState">
+        <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+        <div class="loading-step" id="loadingStep">Preparando datos...</div>
+      </div>
+      <div class="informe-wrap" id="informeWrap">
+        <div class="informe-header">
+          <div>
+            <div class="informe-cliente" id="outputCliente">—</div>
+            <div class="informe-periodo" id="outputPeriodo">—</div>
+          </div>
+          <div class="informe-actions">
+            <button class="btn-icon" onclick="copiarInforme()">📋 Copiar</button>
+            <button class="btn-icon primary" onclick="exportarSlides()">→ Slides</button>
+          </div>
+        </div>
+        <div class="section-block">
+          <div class="section-title">Resumen ejecutivo</div>
+          <div class="metrics-grid" id="metricsGrid"></div>
+        </div>
+        <div class="section-block">
+          <div class="section-title">Hallazgos principales</div>
+          <div id="findingsContainer"></div>
+        </div>
+        <div class="section-block">
+          <div class="section-title">Contexto y análisis</div>
+          <div class="section-body" id="narrativaContainer"></div>
+        </div>
+        <div class="section-block">
+          <div class="section-title">Insights estratégicos</div>
+          <div class="section-body" id="insightsContainer"></div>
+        </div>
+        <div class="section-block">
+          <div class="section-title">Recomendaciones</div>
+          <div class="section-body" id="recomendacionesContainer"></div>
+        </div>
+        <div class="section-block">
+          <div class="section-title">Dato destacado</div>
+          <div id="highlightContainer"></div>
+        </div>
+        <div class="section-block">
+          <div class="section-title">Gaps de información</div>
+          <div class="gaps-box" id="gapsContainer"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-datos">
+      <div class="plabel" style="margin-bottom:16px">Datos enviados a Claude</div>
+      <pre class="raw-json" id="rawJson">Sin datos aún.</pre>
+    </div>
+
+    <div class="tab-content" id="tab-prompt">
+      <div class="plabel" style="margin-bottom:16px">Prompt completo enviado a Claude API</div>
+      <pre class="raw-json" id="rawPrompt">Sin prompt aún.</pre>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CLAUDE_KEY = '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';
+
+const DATOS_CLIENTES = {
+  Colmena: {
+    cliente: 'Colmena',
+    red: 'Instagram',
+    fecha_inicio: '2026-03-11',
+    fecha_fin: '2026-04-09',
+    periodo_dias: 30,
+    seguidores_inicio: 27237,
+    seguidores_fin: 27524,
+    delta_seguidores: 287,
+    alcance_pico: { fecha: '2026-03-27', valor: 673886 },
+    alcance_valle: { fecha: '2026-04-01', valor: 10624 },
+    accounts_engaged_total: 15348,
+    total_posts: 11,
+    engagement_promedio: 3.21,
+    posts: [
+      { fecha:'2026-03-24', tipo:'Imagen', reach:9309, likes:307, shares:24, comments:0, engagement:3.60, contenido:'Deportistas alto rendimiento — Colmena y la salud como clave detrás de cada logro. Imagen principal campaña.' },
+      { fecha:'2026-03-23', tipo:'Imagen', reach:4061, likes:64, shares:37, comments:0, engagement:2.59, contenido:'1er Lugar sector Isapres — Praxis Xperience Index 2026. Reconocimiento Mejora Sostenida PXI.' },
+      { fecha:'2026-03-26', tipo:'Carousel', reach:3304, likes:156, shares:18, comments:0, engagement:5.36, contenido:'Historias personales deportistas: @antoniabraham, @lucas_nervi, @meliiiabraham, @nicolasgarafulic, @matiasgarafulic12.' },
+      { fecha:'2026-03-20', tipo:'Carousel', reach:2357, likes:39, shares:16, comments:0, engagement:2.63, contenido:'Exámenes laboratorio sin costo UC CHRISTUS. Resonancia magnética tope $170.000. Vigente hasta 31 marzo.' },
+      { fecha:'2026-03-19', tipo:'Carousel', reach:1571, likes:39, shares:18, comments:0, engagement:3.82, contenido:'Planes Colmena Blue — cobertura preferente, orientación médica 24/7, descuentos medicamentos.' },
+      { fecha:'2026-03-24', tipo:'Imagen', reach:1497, likes:45, shares:5, comments:0, engagement:3.34, contenido:'Deportistas alto rendimiento — versión secundaria misma campaña.' },
+      { fecha:'2026-03-24', tipo:'Imagen', reach:1245, likes:33, shares:4, comments:0, engagement:2.97, contenido:'Deportistas alto rendimiento — versión terciaria misma campaña.' },
+      { fecha:'2026-03-20', tipo:'Carousel', reach:2071, likes:22, shares:14, comments:0, engagement:1.83, contenido:'Club de Beneficios marzo — Club Ringo, Mizos, Lit, Underfive, Spa & Wellness Dr. Roy Sothers.' },
+      { fecha:'2026-03-16', tipo:'Carousel', reach:1068, likes:21, shares:7, comments:0, engagement:2.62, contenido:'Salud Protegida — cubre 100% cotizaciones en cesantía involuntaria, 4 o 6 meses.' },
+      { fecha:'2026-03-17', tipo:'Carousel', reach:1105, likes:20, shares:4, comments:0, engagement:2.26, contenido:'Cuidar postura — mochila mal ajustada, prevención dolores, hábitos vida saludable.' },
+      { fecha:'2026-04-09', tipo:'No consolidado', reach:null, likes:null, shares:null, comments:null, engagement:null, contenido:'Post del último día del período — métricas no consolidadas.' }
+    ]
+  }
+};
+
+let clienteActual = null;
+let periodoActual = 30;
+
+function setPeriodo(el, dias) {
+  document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  periodoActual = dias;
+}
+
+function seleccionarCliente(nombre) {
+  clienteActual = nombre ? DATOS_CLIENTES[nombre] : null;
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function showToast(msg, dur = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', dur);
+}
+
+function buildPrompt(data, contexto) {
+  const postsStr = data.posts
+    .filter(p => p.reach)
+    .sort((a,b) => b.reach - a.reach)
+    .map((p,i) => `  ${i+1}. [${p.fecha}] ${p.tipo} | Reach: ${p.reach.toLocaleString('es-CL')} | Likes: ${p.likes} | Shares: ${p.shares} | Engagement: ${p.engagement}%\n     "${p.contenido}"`)
+    .join('\n');
+
+  return `Eres un analista senior de Azerta Digital, consultora de comunicaciones estratégicas líder en Chile. Produces informes de desempeño digital que sirven como insumo estratégico para el equipo de cuenta y para el cliente. No eres community manager: eres consultor. Tu análisis es riguroso, directo y orientado a decisiones de comunicación.
+
+## CLIENTE
+${data.cliente} — Isapre, sector salud privado, Chile. Opera en un mercado regulado, con alta sensibilidad reputacional y competencia creciente de otras isapres y del sistema público.
+
+## PERÍODO ANALIZADO
+${data.fecha_inicio} al ${data.fecha_fin} (${data.periodo_dias} días) · Red: ${data.red}
+
+## MÉTRICAS DEL PERÍODO
+- Seguidores: ${data.seguidores_inicio.toLocaleString('es-CL')} → ${data.seguidores_fin.toLocaleString('es-CL')} (variación neta: +${data.delta_seguidores} seguidores)
+- Tasa de crecimiento: ${((data.delta_seguidores / data.seguidores_inicio) * 100).toFixed(2)}% en el período
+- Posts publicados: ${data.total_posts} (${(data.total_posts / data.periodo_dias * 7).toFixed(1)} posts/semana)
+- Engagement promedio: ${data.engagement_promedio}%
+- Cuentas únicas que interactuaron: ${data.accounts_engaged_total.toLocaleString('es-CL')}
+- Alcance diario máximo: ${data.alcance_pico.valor.toLocaleString('es-CL')} (${data.alcance_pico.fecha})
+- Alcance diario mínimo: ${data.alcance_valle.valor.toLocaleString('es-CL')} (${data.alcance_valle.fecha})
+- Ratio alcance máx/mín: ${Math.round(data.alcance_pico.valor / data.alcance_valle.valor)}x
+
+## POSTS DEL PERÍODO (ordenados por reach)
+${postsStr}
+
+## CONTEXTO PROPORCIONADO POR EL EQUIPO
+${contexto || 'Sin contexto adicional proporcionado para este período.'}
+
+## INSTRUCCIONES
+Produce un Analytical Brief. Responde ÚNICAMENTE con el objeto JSON, sin texto previo ni posterior, sin bloques de código markdown.
+
+{
+  "contexto": "2-3 oraciones que enmarcan el período estratégicamente: qué ocurrió, qué relevancia tiene para Colmena como actor del sistema de salud privado chileno, y qué explica la distribución de resultados observada.",
+  "hallazgos": [
+    {
+      "titulo": "Título preciso, máx 8 palabras",
+      "descripcion": "Evidencia concreta con números. Cita datos específicos del período. No generalices.",
+      "implicacion": "Qué significa esto para la estrategia de comunicación. Una decisión o ajuste concreto que se desprende de este hallazgo."
+    }
+  ],
+  "insights": "2-3 párrafos separados por doble salto de línea. Análisis que va más allá de los números: patrones de comportamiento de audiencia, hipótesis sobre qué está funcionando y por qué, tensiones entre métricas (ej: alto alcance vs bajo engagement, o viceversa). Tono consultora estratégica.",
+  "recomendaciones": "3-4 recomendaciones numeradas. Cada una específica, implementable en el próximo período y justificada en los datos observados. Formato: '1. [Acción concreta] — [Justificación en datos]'",
+  "highlight_numero": "El dato más revelador del período, formateado. Puede ser positivo o negativo.",
+  "highlight_label": "Qué representa ese número y por qué es el más importante del período.",
+  "gaps": "Información ausente que limitaría un análisis completo: métricas no disponibles, otras redes no medidas, datos de competencia, contexto de mercado no cuantificado. Sé específico."
+}
+
+Máximo 3 hallazgos. Prioriza los estratégicamente más relevantes, no los más obvios. Evita adjetivos vacíos.`;
+}
+
+async function callClaudeAPI(prompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] })
+  });
+  if (!res.ok) throw new Error(`Claude API ${res.status}: ${(await res.text()).slice(0,200)}`);
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+function renderInforme(data, analisis) {
+  document.getElementById('outputCliente').textContent = data.cliente + ' — ' + data.red;
+  document.getElementById('outputPeriodo').textContent = `${data.fecha_inicio} → ${data.fecha_fin} · ${data.periodo_dias} días`;
+
+  const grid = document.getElementById('metricsGrid');
+  grid.innerHTML = '';
+  [
+    { label:'Seguidores', value: data.seguidores_fin.toLocaleString('es-CL'), delta:`+${data.delta_seguidores}`, dir:'up' },
+    { label:'Crecimiento', value: `+${((data.delta_seguidores/data.seguidores_inicio)*100).toFixed(2)}%`, delta:'', dir:'' },
+    { label:'Alcance pico', value: data.alcance_pico.valor.toLocaleString('es-CL'), delta:'', dir:'' },
+    { label:'Posts', value: data.total_posts, delta:'', dir:'' },
+    { label:'Engagement prom.', value: `${data.engagement_promedio}%`, delta:'', dir:'' },
+    { label:'Cuentas alcanzadas', value: data.accounts_engaged_total.toLocaleString('es-CL'), delta:'', dir:'' },
+  ].forEach(m => {
+    grid.innerHTML += `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-value">${m.value}</div>${m.delta ? `<div class="metric-delta ${m.dir}">↑ ${m.delta}</div>` : ''}</div>`;
+  });
+
+  const findings = document.getElementById('findingsContainer');
+  findings.innerHTML = '';
+  (analisis.hallazgos || []).forEach((h,i) => {
+    findings.innerHTML += `<div class="finding-item"><div class="finding-rank">0${i+1}</div><div class="finding-body"><div class="finding-title">${h.titulo}</div><div class="finding-desc">${h.descripcion}</div><div class="finding-implication">→ ${h.implicacion}</div></div></div>`;
+  });
+
+  document.getElementById('narrativaContainer').innerHTML = (analisis.contexto||'').split('\n').map(p=>p.trim()?`<p>${p}</p>`:'').join('');
+  document.getElementById('insightsContainer').innerHTML = (analisis.insights||'').split('\n\n').map(p=>p.trim()?`<p>${p}</p>`:'').join('');
+  document.getElementById('recomendacionesContainer').innerHTML = (analisis.recomendaciones||'').split('\n').map(p=>p.trim()?`<p>${p}</p>`:'').join('');
+  document.getElementById('highlightContainer').innerHTML = `<div class="highlight-box"><div class="highlight-number">${analisis.highlight_numero||'—'}</div><div class="highlight-label">${analisis.highlight_label||''}</div></div>`;
+  document.getElementById('gapsContainer').textContent = analisis.gaps || '—';
+}
+
+async function generarInforme() {
+  if (!clienteActual) { showToast('⚠ Selecciona un cliente primero'); return; }
+  const contexto = document.getElementById('context').value.trim();
+  const btn = document.getElementById('btnGenerate');
+  btn.disabled = true;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('informeWrap').classList.remove('active');
+  document.getElementById('loadingState').classList.add('active');
+
+  try {
+    document.getElementById('loadingStep').textContent = 'Preparando datos de Metricool...';
+    await new Promise(r => setTimeout(r, 500));
+    document.getElementById('loadingStep').textContent = 'Construyendo prompt estratégico...';
+    const prompt = buildPrompt(clienteActual, contexto);
+    document.getElementById('rawJson').textContent = JSON.stringify(clienteActual, null, 2);
+    document.getElementById('rawPrompt').textContent = prompt;
+    await new Promise(r => setTimeout(r, 400));
+    document.getElementById('loadingStep').textContent = 'Claude analizando el período...';
+    const respuesta = await callClaudeAPI(prompt);
+    document.getElementById('loadingStep').textContent = 'Estructurando informe...';
+    let analisis;
+    try { analisis = JSON.parse(respuesta.replace(/```json|```/g,'').trim()); }
+    catch(e) { analisis = { contexto: respuesta, hallazgos:[], insights:'', recomendaciones:'', highlight_numero:'—', highlight_label:'Ver análisis completo', gaps:'' }; }
+    document.getElementById('loadingState').classList.remove('active');
+    document.getElementById('informeWrap').classList.add('active');
+    renderInforme(clienteActual, analisis);
+    showToast('✓ Informe generado');
+  } catch(err) {
+    document.getElementById('loadingState').classList.remove('active');
+    document.getElementById('emptyState').style.display = 'flex';
+    document.getElementById('emptyState').querySelector('.empty-title').textContent = 'Error';
+    document.getElementById('emptyState').querySelector('.empty-sub').textContent = err.message;
+    showToast('✗ ' + err.message, 6000);
+  }
+  btn.disabled = false;
+}
+
+function copiarInforme() {
+  navigator.clipboard.writeText(document.getElementById('informeWrap').innerText)
+    .then(() => showToast('✓ Copiado al portapapeles'));
+}
+
+function exportarSlides() {
+  showToast('→ Exportación a Slides: Fase 4');
+}
+</script>
+</body>
+</html>
